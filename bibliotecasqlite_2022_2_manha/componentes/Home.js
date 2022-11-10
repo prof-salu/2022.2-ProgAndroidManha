@@ -1,39 +1,62 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState, useContext} from 'react';
 import { Text, View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 
 import {useNavigation, useIsFocused} from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
 
+import {LivroContext} from './EnviaLivro';
+
 export default function Home() {
 //Criando o banco de dados
-const db = SQLite.openDatabase('db.MainDB');
-const isFocused = useIsFocused();
-
-useEffect(() => {
-  createTable();
-}, [isFocused]);
-
-const createTable = () => {
-  db.transaction((tx) => {
-    tx.executeSql("CREATE TABLE IF NOT EXISTS livro (" +
-                  "codigo INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                  "titulo TEXT, " +
-                  "assunto TEXT, " +
-                  "autor TEXT)");
-  })
-}
-
-
-
-
-const listaTemp = [
-                    {codigo: 1, titulo: 'Aprendendo react native', assunto: 'Programação', editora: 'NOVATEC', autor: 'Zeca Xavier'},
-                    {codigo: 2, titulo: 'Alimentação Saudavel', assunto: 'Culinária', editora: 'Moderna', autor: 'Ana Gleisi'}
-                  ];
-
+  const db = SQLite.openDatabase('db.MainDB');
+  const isFocused = useIsFocused();
   const navigation = useNavigation();
+  const {alteraLivro} = useContext(LivroContext);
+
+  const[livros, setLivros] = useState([]);
+
+  useEffect(() => {
+    resetLivro();
+    pegaLivros();
+    createTable();
+  }, [isFocused]);
+
+  const createTable = () => {
+    db.transaction((tx) => {
+      tx.executeSql("CREATE TABLE IF NOT EXISTS livro (" +
+                    "codigo INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "titulo TEXT, " +
+                    "assunto TEXT, " +
+                    "editora TEXT, " + 
+                    "autor TEXT)");
+    })
+  }
+
+  const pegaLivros = () => {
+    db.transaction((tx) => {
+      tx.executeSql('SELECT codigo, titulo, assunto, editora, autor FROM livro',
+      [], 
+      (tx, resultado) => {
+        var temp = [];
+        for(let i = 0; i < resultado.rows.length; i++){
+          temp.push(resultado.rows.item(i));
+        }
+        console.log(resultado.rows.length);
+        setLivros(temp);
+      })
+    })
+  }
+
+  function resetLivro(){
+    alteraLivro('','','','','');
+  }
 
   function novoLivro(){
+    navigation.navigate('Formulario');
+  }
+
+  const enviaLivroParaForm = (codigo, titulo, assunto, editora, autor) => {
+    alteraLivro(codigo, titulo, assunto, editora, autor);
     navigation.navigate('Formulario');
   }
   
@@ -41,10 +64,10 @@ const listaTemp = [
     <View style={styles.container}>
       <FlatList 
         style={styles.lista}
-        data={listaTemp}
+        data={livros}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({item}) => (
-          <TouchableOpacity style={styles.item}>
+          <TouchableOpacity style={styles.item} onPress={() => enviaLivroParaForm(item.codigo, item.titulo, item.assunto, item.editora, item.autor)}>
             <Text>ID: {item.codigo}</Text>
             <Text>Titulo: {item.titulo}</Text>
             <Text>Assunto: {item.assunto}</Text>

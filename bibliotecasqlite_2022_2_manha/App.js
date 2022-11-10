@@ -1,13 +1,17 @@
 import * as React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+
 import Navegacao from './componentes/Navegacao';
+import EnviaLivro from './componentes/EnviaLivro';
 
 export default function App() {
   return (
     <View style={styles.container}>
       <NavigationContainer>
-        <Navegacao />
+        <EnviaLivro>
+          <Navegacao />  
+        </EnviaLivro>
       </NavigationContainer>
     </View>
   );
